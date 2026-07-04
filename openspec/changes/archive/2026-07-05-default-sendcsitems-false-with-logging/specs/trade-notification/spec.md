@@ -1,7 +1,5 @@
-## Purpose
+## MODIFIED Requirements
 
-Defines how detected CS items are forwarded to the configured master account via ASF trade offers.
-## Requirements
 ### Requirement: Send trade notification to master account
 When CS items are detected in a bot's inventory by any supported mechanism (trade results processing or bot startup scan), the system SHALL send a trade offer containing those CS items to the configured master account — but only when the bot's `SendCSItems` config is explicitly set to `true`. When the property is absent, forwarding is off and no config-related log line is emitted.
 
@@ -33,13 +31,13 @@ When CS items are detected in a bot's inventory by any supported mechanism (trad
 - **THEN** the system SHALL log the error
 - **AND** not retry automatically
 
-### Requirement: Log trade notification events
+## REMOVED Requirements
 
-The system SHALL log all trade notification attempts and outcomes.
+### Requirement: Trade skipped due to config
+**Reason**: The old "skipped" line is replaced by the new "explicit state" info line in `cs-inventory-config` (Requirement: Log explicit sendcsitems state). The new line covers both the explicit-`false` and the explicit-`true` cases; emitting a separate "skipped" line would double-log.
+**Migration**: Operators who relied on grepping for "skipped" should now grep for `SendCSItems is disabled.` (explicit `false`) or rely on the absence of any config-related log line (property absent, no trade offer made).
 
-#### Scenario: Successful trade sent
-- **WHEN** a trade offer is sent successfully
-- **THEN** the system logs the item count, bot name, and target master account
+## ADDED Requirements
 
 ### Requirement: Log explicit sendcsitems state on trade results
 The system SHALL emit a single info log line stating the effective `SendCSItems` state per bot, per trade-results event, whenever the property is explicitly set. When the property is absent, the system SHALL stay silent.

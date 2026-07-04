@@ -1,7 +1,5 @@
-## Purpose
+## MODIFIED Requirements
 
-Defines the per-bot configuration properties that control CS item forwarding behavior in the plugin.
-## Requirements
 ### Requirement: Per-bot sendcsitems configuration
 Each bot SHALL support a `SendCSItems` boolean property in its ASF JSON configuration to control whether CS item trade notifications are sent from that bot. The property name is `SendCSItems` (PascalCase, matching ASF config conventions). When the property is absent, the system SHALL treat the value as `false` (forwarding disabled by default; opt-in).
 
@@ -23,6 +21,8 @@ Each bot SHALL support a `SendCSItems` boolean property in its ASF JSON configur
 - **THEN** the system SHALL treat it as the default value (false)
 - **AND** log a warning about the invalid configuration value
 
+## ADDED Requirements
+
 ### Requirement: Log explicit sendcsitems state
 The system SHALL emit a single info log line per bot, per relevant event, that states the effective state of `SendCSItems` whenever the property is explicitly set in the bot's JSON config. The system SHALL NOT emit a config-related log line when the property is absent.
 
@@ -42,18 +42,3 @@ The system SHALL emit a single info log line per bot, per relevant event, that s
 - **WHEN** a bot's config has `"SendCSItems"` with a non-boolean value
 - **THEN** the system SHALL emit the invalid-value warning
 - **AND** SHALL emit the "disabled" info line (because the effective value falls back to the new `false` default)
-
-### Requirement: Config property accessed via plugin API
-
-The system SHALL read the `SendCSItems` property via the `IBotModules.OnBotInitModules` API, which provides the `additionalConfigProperties` dictionary from ASF's `[JsonExtensionData]` mechanism.
-
-#### Scenario: Plugin receives config at bot init
-- **WHEN** a bot is initialized by ASF
-- **THEN** the system receives the bot's `additionalConfigProperties` via `OnBotInitModules`
-- **AND** stores them keyed by bot name for later retrieval
-
-#### Scenario: Plugin reads config at trade check time
-- **WHEN** CS items are detected in a bot's inventory
-- **THEN** the system retrieves the bot's stored `additionalConfigProperties` by bot name
-- **AND** checks for the `SendCSItems` key
-- **AND** parses its value as a boolean

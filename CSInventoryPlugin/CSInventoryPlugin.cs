@@ -67,7 +67,6 @@ public sealed class CSInventoryPlugin : IASF, IBot, IBotConnection, IGitHubPlugi
 		}
 
 		if (!IsSendCsItemsEnabled(bot)) {
-			bot.ArchiLogger.LogGenericInfo($"{bot.BotName}: Startup CS item scan skipped (SendCSItems = false).");
 			return;
 		}
 
@@ -85,7 +84,6 @@ public sealed class CSInventoryPlugin : IASF, IBot, IBotConnection, IGitHubPlugi
 		}
 
 		if (!IsSendCsItemsEnabled(bot)) {
-			bot.ArchiLogger.LogGenericInfo($"{bot.BotName}: CS item notification skipped (SendCSItems = false).");
 			return;
 		}
 
@@ -106,10 +104,14 @@ public sealed class CSInventoryPlugin : IASF, IBot, IBotConnection, IGitHubPlugi
 	private static bool IsSendCsItemsEnabled(Bot bot) {
 		BotAdditionalProperties.TryGetValue(bot.BotName, out IReadOnlyDictionary<string, JsonElement>? additionalProperties);
 
-		bool valid = CSBotConfig.TryGetSendCsItems(additionalProperties, out bool enabled);
+		bool valid = CSBotConfig.TryGetSendCsItems(additionalProperties, out bool enabled, out bool explicitlySet);
 
 		if (!valid) {
-			bot.ArchiLogger.LogGenericWarning($"{bot.BotName}: Invalid SendCSItems value, expected boolean. Using default (true).");
+			bot.ArchiLogger.LogGenericWarning($"{bot.BotName}: Invalid SendCSItems value, expected boolean. Using default (false).");
+		}
+
+		if (explicitlySet) {
+			bot.ArchiLogger.LogGenericInfo($"{bot.BotName}: SendCSItems is {(enabled ? "enabled" : "disabled")}.");
 		}
 
 		return enabled;

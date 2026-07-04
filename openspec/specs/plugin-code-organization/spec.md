@@ -29,22 +29,31 @@ The system SHALL provide an `internal static` `CSItemUtilities` class containing
 - **AND** does not require a `Bot` instance
 
 ### Requirement: Config parsing is decoupled from Bot
-The system SHALL provide an `internal static` `CSBotConfig` class that parses the `SendCSItems` property from a raw `IReadOnlyDictionary<string, JsonElement>?` without requiring a `Bot` instance. The parsing result SHALL indicate whether the value was valid so the caller can log warnings for invalid configurations. The parser SHALL have no side effects and SHALL NOT log.
+The system SHALL provide an `internal static` `CSBotConfig` class that parses the `SendCSItems` property from a raw `IReadOnlyDictionary<string, JsonElement>?` without requiring a `Bot` instance. The parsing result SHALL indicate whether the value was valid, whether the property was explicitly set, and the effective enabled value (defaulting to `false` when the property is absent, the dictionary is null, or the value is not a boolean). The parser SHALL have no side effects and SHALL NOT log.
 
 #### Scenario: Parsing sendcsitems from a raw dictionary
 - **WHEN** `CSBotConfig.TryGetSendCsItems()` is called with a dictionary containing `"SendCSItems": false`
 - **THEN** it returns `false` as the enabled value
 - **AND** returns `true` as the validity flag
+- **AND** returns `true` as the explicitly-set flag
 
 #### Scenario: Parsing sendcsitems when absent
 - **WHEN** `CSBotConfig.TryGetSendCsItems()` is called with a dictionary that does not contain `"SendCSItems"`
-- **THEN** it returns `true` as the enabled value (default)
+- **THEN** it returns `false` as the enabled value (default)
 - **AND** returns `true` as the validity flag
+- **AND** returns `false` as the explicitly-set flag
 
 #### Scenario: Parsing sendcsitems with invalid type
 - **WHEN** `CSBotConfig.TryGetSendCsItems()` is called with a dictionary containing `"SendCSItems": "yes"` (non-boolean)
-- **THEN** it returns `true` as the enabled value (default)
+- **THEN** it returns `false` as the enabled value (default)
 - **AND** returns `false` as the validity flag
+- **AND** returns `true` as the explicitly-set flag
+
+#### Scenario: Parsing sendcsitems with null additionalProperties
+- **WHEN** `CSBotConfig.TryGetSendCsItems()` is called with `additionalProperties == null`
+- **THEN** it returns `false` as the enabled value (default)
+- **AND** returns `true` as the validity flag
+- **AND** returns `false` as the explicitly-set flag
 
 ### Requirement: Forwarding and startup scan logic is in a dedicated static class
 The system SHALL provide an `internal static` `CSItemForwarder` class that encapsulates the forwarding logic (`ForwardCsItemsToMaster`) and startup scan logic (`PerformStartupScan`). This class depends on `Bot`, `CSItemUtilities`, and `CSBotConfig`.
@@ -59,4 +68,3 @@ The system SHALL provide an `internal static` `CSItemForwarder` class that encap
 - **WHEN** `CSItemForwarder.PerformStartupScan()` is called with a bot
 - **THEN** it fetches the bot's CS inventory using `CSItemUtilities.CSAppID` and `CSItemUtilities.CSContextID`
 - **AND** forwards any found items via `ForwardCsItemsToMaster()`
-

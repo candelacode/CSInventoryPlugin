@@ -100,11 +100,13 @@ public sealed class CSInventoryPluginTests {
 
 		bool valid = CSBotConfig.TryGetSendCsItems(
 			config.EnumerateObject().ToDictionary(p => p.Name, p => p.Value),
-			out bool enabled
+			out bool enabled,
+			out bool explicitlySet
 		);
 
 		Assert.True(valid);
 		Assert.True(enabled);
+		Assert.True(explicitlySet);
 	}
 
 	[Fact]
@@ -113,58 +115,67 @@ public sealed class CSInventoryPluginTests {
 
 		bool valid = CSBotConfig.TryGetSendCsItems(
 			config.EnumerateObject().ToDictionary(p => p.Name, p => p.Value),
-			out bool enabled
+			out bool enabled,
+			out bool explicitlySet
 		);
 
 		Assert.True(valid);
 		Assert.False(enabled);
+		Assert.True(explicitlySet);
 	}
 
 	[Fact]
-	public void TryGetSendCsItems_Missing_ReturnsValidAndEnabledDefault() {
+	public void TryGetSendCsItems_Missing_ReturnsValidAndDisabledDefault() {
 		var config = JsonSerializer.Deserialize<JsonElement>("{}");
 
 		bool valid = CSBotConfig.TryGetSendCsItems(
 			config.EnumerateObject().ToDictionary(p => p.Name, p => p.Value),
-			out bool enabled
+			out bool enabled,
+			out bool explicitlySet
 		);
 
 		Assert.True(valid);
-		Assert.True(enabled);
+		Assert.False(enabled);
+		Assert.False(explicitlySet);
 	}
 
 	[Fact]
-	public void TryGetSendCsItems_NullProperties_ReturnsValidAndEnabledDefault() {
-		bool valid = CSBotConfig.TryGetSendCsItems(null, out bool enabled);
+	public void TryGetSendCsItems_NullProperties_ReturnsValidAndDisabledDefault() {
+		bool valid = CSBotConfig.TryGetSendCsItems(null, out bool enabled, out bool explicitlySet);
 
 		Assert.True(valid);
-		Assert.True(enabled);
+		Assert.False(enabled);
+		Assert.False(explicitlySet);
 	}
 
 	[Fact]
-	public void TryGetSendCsItems_InvalidType_ReturnsInvalidAndEnabledDefault() {
+	public void TryGetSendCsItems_InvalidType_ReturnsInvalidAndDisabledDefault() {
 		var config = JsonSerializer.Deserialize<JsonElement>("{\"SendCSItems\": \"yes\"}");
 
 		bool valid = CSBotConfig.TryGetSendCsItems(
 			config.EnumerateObject().ToDictionary(p => p.Name, p => p.Value),
-			out bool enabled
+			out bool enabled,
+			out bool explicitlySet
 		);
 
 		Assert.False(valid);
-		Assert.True(enabled);
+		Assert.False(enabled);
+		Assert.True(explicitlySet);
 	}
 
 	[Fact]
-	public void TryGetSendCsItems_NumberType_ReturnsInvalidAndEnabledDefault() {
+	public void TryGetSendCsItems_NumberType_ReturnsInvalidAndDisabledDefault() {
 		var config = JsonSerializer.Deserialize<JsonElement>("{\"SendCSItems\": 1}");
 
 		bool valid = CSBotConfig.TryGetSendCsItems(
 			config.EnumerateObject().ToDictionary(p => p.Name, p => p.Value),
-			out bool enabled
+			out bool enabled,
+			out bool explicitlySet
 		);
 
 		Assert.False(valid);
-		Assert.True(enabled);
+		Assert.False(enabled);
+		Assert.True(explicitlySet);
 	}
 
 	[Fact]
