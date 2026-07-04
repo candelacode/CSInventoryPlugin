@@ -11,6 +11,7 @@ namespace CSInventory.Plugin.Tests;
 public sealed class CSInventoryPluginTests {
 	private const uint CSAppID = 730;
 	private const uint NonCSAppID = 753;
+	private const ulong CSContextID = 2;
 
 	[Fact]
 	public void AssetWithCSAppID_IsDetectedAsCSItem() {
@@ -27,31 +28,13 @@ public sealed class CSInventoryPluginTests {
 	}
 
 	[Fact]
-	public void SendCsItemsConfig_True_ReturnsTrue() {
-		var config = JsonSerializer.Deserialize<JsonElement>("{\"sendcsitems\": true}");
-
-		Assert.Equal(JsonValueKind.True, config.GetProperty("sendcsitems").ValueKind);
+	public void CSContextID_IsGameInventoryContextTwo() {
+		Assert.Equal<ulong>(CSContextID, CSItemUtilities.CSContextID);
 	}
 
 	[Fact]
-	public void SendCsItemsConfig_False_ReturnsFalse() {
-		var config = JsonSerializer.Deserialize<JsonElement>("{\"sendcsitems\": false}");
-
-		Assert.Equal(JsonValueKind.False, config.GetProperty("sendcsitems").ValueKind);
-	}
-
-	[Fact]
-	public void SendCsItemsConfig_Missing_DefaultsToTrue() {
-		var config = JsonSerializer.Deserialize<JsonElement>("{}");
-
-		Assert.False(config.TryGetProperty("sendcsitems", out _));
-	}
-
-	[Fact]
-	public void SendCsItemsConfig_InvalidType_DefaultsToTrue() {
-		var config = JsonSerializer.Deserialize<JsonElement>("{\"sendcsitems\": \"yes\"}");
-
-		Assert.Equal(JsonValueKind.String, config.GetProperty("sendcsitems").ValueKind);
+	public void CSAppID_IsSevenHundredThirty() {
+		Assert.Equal<uint>(730, CSItemUtilities.CSAppID);
 	}
 
 	[Fact]
@@ -62,7 +45,7 @@ public sealed class CSInventoryPluginTests {
 			new(CSAppID, 6, 12347, 1),
 		};
 
-		var result = CSInventoryPlugin.FilterCsItems(items);
+		var result = CSItemUtilities.FilterCsItems(items);
 
 		Assert.Equal(2, result.Count);
 		Assert.All(result, item => Assert.Equal(CSAppID, item.AppID));
@@ -75,39 +58,112 @@ public sealed class CSInventoryPluginTests {
 			new(NonCSAppID, 6, 12347, 1),
 		};
 
-		var result = CSInventoryPlugin.FilterCsItems(items);
+		var result = CSItemUtilities.FilterCsItems(items);
 
 		Assert.Empty(result);
 	}
 
 	[Fact]
 	public void FilterCsItems_EmptyCollection_ReturnsEmpty() {
-		var result = CSInventoryPlugin.FilterCsItems([]);
+		var result = CSItemUtilities.FilterCsItems([]);
 
 		Assert.Empty(result);
 	}
 
 	[Fact]
 	public void EvaluateMasterForForwarding_NoMaster_ReturnsNoMaster() {
-		var decision = CSInventoryPlugin.EvaluateMasterForForwarding(0, 76561198000000001);
+		var decision = CSItemUtilities.EvaluateMasterForForwarding(0, 76561198000000001);
 
-		Assert.Equal(CSInventoryPlugin.ForwardMasterDecision.NoMaster, decision);
+		Assert.Equal(CSItemUtilities.ForwardMasterDecision.NoMaster, decision);
 	}
 
 	[Fact]
 	public void EvaluateMasterForForwarding_MasterIsSelf_ReturnsMasterIsSelf() {
 		const ulong botSteamID = 76561198000000001;
 
-		var decision = CSInventoryPlugin.EvaluateMasterForForwarding(botSteamID, botSteamID);
+		var decision = CSItemUtilities.EvaluateMasterForForwarding(botSteamID, botSteamID);
 
-		Assert.Equal(CSInventoryPlugin.ForwardMasterDecision.MasterIsSelf, decision);
+		Assert.Equal(CSItemUtilities.ForwardMasterDecision.MasterIsSelf, decision);
 	}
 
 	[Fact]
 	public void EvaluateMasterForForwarding_ValidMaster_ReturnsForward() {
-		var decision = CSInventoryPlugin.EvaluateMasterForForwarding(76561198000000002, 76561198000000001);
+		var decision = CSItemUtilities.EvaluateMasterForForwarding(76561198000000002, 76561198000000001);
 
-		Assert.Equal(CSInventoryPlugin.ForwardMasterDecision.Forward, decision);
+		Assert.Equal(CSItemUtilities.ForwardMasterDecision.Forward, decision);
+	}
+
+	[Fact]
+	public void TryGetSendCsItems_True_ReturnsValidAndEnabled() {
+		var config = JsonSerializer.Deserialize<JsonElement>("{\"sendcsitems\": true}");
+
+		bool valid = CSBotConfig.TryGetSendCsItems(
+			config.EnumerateObject().ToDictionary(p => p.Name, p => p.Value),
+			out bool enabled
+		);
+
+		Assert.True(valid);
+		Assert.True(enabled);
+	}
+
+	[Fact]
+	public void TryGetSendCsItems_False_ReturnsValidAndDisabled() {
+		var config = JsonSerializer.Deserialize<JsonElement>("{\"sendcsitems\": false}");
+
+		bool valid = CSBotConfig.TryGetSendCsItems(
+			config.EnumerateObject().ToDictionary(p => p.Name, p => p.Value),
+			out bool enabled
+		);
+
+		Assert.True(valid);
+		Assert.False(enabled);
+	}
+
+	[Fact]
+	public void TryGetSendCsItems_Missing_ReturnsValidAndEnabledDefault() {
+		var config = JsonSerializer.Deserialize<JsonElement>("{}");
+
+		bool valid = CSBotConfig.TryGetSendCsItems(
+			config.EnumerateObject().ToDictionary(p => p.Name, p => p.Value),
+			out bool enabled
+		);
+
+		Assert.True(valid);
+		Assert.True(enabled);
+	}
+
+	[Fact]
+	public void TryGetSendCsItems_NullProperties_ReturnsValidAndEnabledDefault() {
+		bool valid = CSBotConfig.TryGetSendCsItems(null, out bool enabled);
+
+		Assert.True(valid);
+		Assert.True(enabled);
+	}
+
+	[Fact]
+	public void TryGetSendCsItems_InvalidType_ReturnsInvalidAndEnabledDefault() {
+		var config = JsonSerializer.Deserialize<JsonElement>("{\"sendcsitems\": \"yes\"}");
+
+		bool valid = CSBotConfig.TryGetSendCsItems(
+			config.EnumerateObject().ToDictionary(p => p.Name, p => p.Value),
+			out bool enabled
+		);
+
+		Assert.False(valid);
+		Assert.True(enabled);
+	}
+
+	[Fact]
+	public void TryGetSendCsItems_NumberType_ReturnsInvalidAndEnabledDefault() {
+		var config = JsonSerializer.Deserialize<JsonElement>("{\"sendcsitems\": 1}");
+
+		bool valid = CSBotConfig.TryGetSendCsItems(
+			config.EnumerateObject().ToDictionary(p => p.Name, p => p.Value),
+			out bool enabled
+		);
+
+		Assert.False(valid);
+		Assert.True(enabled);
 	}
 
 	[Fact]
@@ -141,10 +197,5 @@ public sealed class CSInventoryPluginTests {
 		bool rescan = scannedBots.TryAdd("bot1", true);
 
 		Assert.True(rescan);
-	}
-
-	[Fact]
-	public void CSContextID_IsGameInventoryContextTwo() {
-		Assert.Equal<ulong>(2, CSInventoryPlugin.CSContextID);
 	}
 }
