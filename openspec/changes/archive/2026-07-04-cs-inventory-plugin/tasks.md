@@ -47,4 +47,4 @@
 - [x] 7.1 Archive or remove `openspec/specs/bot-management/` spec
 - [x] 7.2 Update `openspec/specs/github-autoupdate/` spec to reflect new repo name
 - [x] 7.3 Remove old bot management tests that are no longer relevant
-- [ ] 7.4 Init git with `git init` and create initial commit
+- [x] 7.4 Init git with `git init` and create initial commit

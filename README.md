@@ -29,8 +29,6 @@ The plugin supports a per-bot `sendcsitems` property in each bot's JSON configur
 
 ```json
 {
-  "SteamLogin": "mybot",
-  "SteamPassword": "mypassword",
   "sendcsitems": true
 }
 ```
