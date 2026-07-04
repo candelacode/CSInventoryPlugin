@@ -34,7 +34,6 @@ The plugin supports a per-bot `SendCSItems` property in each bot's JSON configur
 ```
 
 - `SendCSItems` (bool, optional, default: `true`): Set to `false` to disable CS item trade notifications for a specific bot
-- `sendcsitems` (deprecated alias): The lowercase `sendcsitems` key is still accepted for backward compatibility, but logs a deprecation warning on startup. Please rename it to `SendCSItems`.
 
 When a bot receives CS items in a trade, the plugin will automatically forward those items to the bot's configured master account via a new trade offer.
 
