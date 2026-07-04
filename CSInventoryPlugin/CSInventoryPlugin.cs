@@ -20,6 +20,7 @@ namespace CSInventory.Plugin;
 [UsedImplicitly]
 public sealed class CSInventoryPlugin : IASF, IBot, IBotConnection, IGitHubPluginUpdates, IBotModules, IBotTradeOfferResults {
 	private const uint CSAppID = 730;
+	internal const ulong CSContextID = 2;
 
 	private static readonly ConcurrentDictionary<string, IReadOnlyDictionary<string, JsonElement>?> BotAdditionalProperties = new();
 	private static readonly ConcurrentDictionary<string, bool> BotStartupScanned = new();
@@ -80,7 +81,7 @@ public sealed class CSInventoryPlugin : IASF, IBot, IBotConnection, IGitHubPlugi
 
 		bot.ArchiLogger.LogGenericInfo($"{bot.BotName}: Performing startup CS item scan.");
 
-		(HashSet<Asset>? inventory, string inventoryMessage) = await bot.Actions.GetInventory(appID: CSAppID, contextID: Asset.SteamCommunityContextID).ConfigureAwait(false);
+		(HashSet<Asset>? inventory, string inventoryMessage) = await bot.Actions.GetInventory(appID: CSAppID, contextID: CSContextID).ConfigureAwait(false);
 
 		if (inventory == null || inventory.Count == 0) {
 			if (inventory == null) {

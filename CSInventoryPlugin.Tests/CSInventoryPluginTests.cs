@@ -142,4 +142,9 @@ public sealed class CSInventoryPluginTests {
 
 		Assert.True(rescan);
 	}
+
+	[Fact]
+	public void CSContextID_IsGameInventoryContextTwo() {
+		Assert.Equal<ulong>(2, CSInventoryPlugin.CSContextID);
+	}
 }
