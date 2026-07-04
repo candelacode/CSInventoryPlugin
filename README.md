@@ -183,6 +183,46 @@ ASF provides two update interfaces:
 
 Both require appropriate ASF config values (`PluginsUpdateMode`, `PluginsUpdateList`).
 
+### Receiving automatic updates (user-side)
+
+The plugin implements `IGitHubPluginUpdates` with `RepositoryName = "candelacode/CSInventoryPlugin"`. To allow ASF to auto-update this plugin, set the following in your ASF global config (`globalConfig.json`):
+
+```json
+{
+  "PluginsUpdateMode": 3,
+  "PluginsUpdateList": {
+    "CSInventoryPlugin": true
+  }
+}
+```
+
+- `PluginsUpdateMode: 3` — update only explicitly-listed plugins.
+- `PluginsUpdateList.CSInventoryPlugin: true` — opt this plugin into auto-updates.
+
+When a new `vX.Y.Z.W` release is published on GitHub, ASF will download `CSInventoryPlugin.zip` from the latest release, replace the plugin's binaries in `plugins/CSInventoryPlugin/`, and restart.
+
+---
+
+## Releasing (maintainer-side)
+
+To cut a new release of this plugin:
+
+1. Bump `<Version>` in `Directory.Build.props` to the new 4-part value (e.g. `1.0.1.0`). The version MUST be 4 parts (`Major.Minor.Build.Revision`) and parsable as a `System.Version`. The 3-part form `1.0.1` is not accepted.
+2. Commit the change on `main`:
+   ```bash
+   git add Directory.Build.props
+   git commit -m "Bump version to 1.0.1.0"
+   git push origin main
+   ```
+3. Create and push the matching `vX.Y.Z.W` tag on the merge commit:
+   ```bash
+   git tag v1.0.1.0
+   git push origin v1.0.1.0
+   ```
+4. The `.github/workflows/publish.yml` `release` job runs automatically. It builds the plugin on `ubuntu-latest`, `macos-latest`, and `windows-latest`, generates SHA512SUMS, and publishes a non-prerelease GitHub release with `CSInventoryPlugin.zip` (plus the per-OS zips) attached.
+
+The tag body (the part after `v`) MUST match `<Version>` exactly. If they differ, the build will still succeed but the resulting DLL's version will not match the tag and ASF will not auto-update users.
+
 ---
 
 ## Contributing
