@@ -26,11 +26,12 @@ When CS items are detected in a bot's inventory after a trade, the system SHALL 
 - **AND** not retry automatically
 
 ### Requirement: Log trade notification events
+
 The system SHALL log all trade notification attempts and outcomes.
 
 #### Scenario: Successful trade sent
 - **WHEN** a trade offer is sent successfully
-- **THEN** the system logs the trade offer ID, items included, and target master account
+- **THEN** the system logs the item count, bot name, and target master account
 
 #### Scenario: Trade skipped due to config
 - **WHEN** CS items are detected but `sendcsitems` is false for the bot

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Composition;
 using System.Linq;
@@ -16,8 +17,10 @@ namespace CSInventory.Plugin;
 
 [Export(typeof(IPlugin))]
 [UsedImplicitly]
-public sealed class CSInventoryPlugin : IASF, IGitHubPluginUpdates, IBotTradeOfferResults {
+public sealed class CSInventoryPlugin : IASF, IGitHubPluginUpdates, IBotModules, IBotTradeOfferResults {
 	private const uint CSAppID = 730;
+
+	private static readonly ConcurrentDictionary<string, IReadOnlyDictionary<string, JsonElement>?> BotAdditionalProperties = new();
 
 	[JsonInclude]
 	public string Name => nameof(CSInventoryPlugin);
@@ -34,6 +37,13 @@ public sealed class CSInventoryPlugin : IASF, IGitHubPluginUpdates, IBotTradeOff
 
 	public Task OnLoaded() {
 		ASF.ArchiLogger.LogGenericInfo($"{Name} loaded!");
+		return Task.CompletedTask;
+	}
+
+	public Task OnBotInitModules(Bot bot, IReadOnlyDictionary<string, JsonElement>? additionalConfigProperties = null) {
+		ArgumentNullException.ThrowIfNull(bot);
+
+		BotAdditionalProperties[bot.BotName] = additionalConfigProperties;
 		return Task.CompletedTask;
 	}
 
@@ -80,8 +90,7 @@ public sealed class CSInventoryPlugin : IASF, IGitHubPluginUpdates, IBotTradeOff
 	}
 
 	private static bool GetSendCsItemsConfig(Bot bot) {
-		var additionalProperties = bot.BotConfig.AdditionalProperties;
-		if (additionalProperties == null) {
+		if (!BotAdditionalProperties.TryGetValue(bot.BotName, out IReadOnlyDictionary<string, JsonElement>? additionalProperties) || (additionalProperties == null)) {
 			return true;
 		}
 
