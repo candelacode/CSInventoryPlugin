@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using ArchiSteamFarm.Steam.Data;
-using CSInventory.Plugin;
+using CSInventoryPlugin;
 using Xunit;
 
-namespace CSInventory.Plugin.Tests;
+namespace CSInventoryPlugin.Tests;
 
 public sealed class CSInventoryPluginTests {
 	private const uint CSAppID = 730;
@@ -95,7 +95,7 @@ public sealed class CSInventoryPluginTests {
 
 	[Fact]
 	public void TryGetSendCsItems_True_ReturnsValidAndEnabled() {
-		var config = JsonSerializer.Deserialize<JsonElement>("{\"sendcsitems\": true}");
+		var config = JsonSerializer.Deserialize<JsonElement>("{\"SendCSItems\": true}");
 
 		bool valid = CSBotConfig.TryGetSendCsItems(
 			config.EnumerateObject().ToDictionary(p => p.Name, p => p.Value),
@@ -108,7 +108,7 @@ public sealed class CSInventoryPluginTests {
 
 	[Fact]
 	public void TryGetSendCsItems_False_ReturnsValidAndDisabled() {
-		var config = JsonSerializer.Deserialize<JsonElement>("{\"sendcsitems\": false}");
+		var config = JsonSerializer.Deserialize<JsonElement>("{\"SendCSItems\": false}");
 
 		bool valid = CSBotConfig.TryGetSendCsItems(
 			config.EnumerateObject().ToDictionary(p => p.Name, p => p.Value),
@@ -142,7 +142,7 @@ public sealed class CSInventoryPluginTests {
 
 	[Fact]
 	public void TryGetSendCsItems_InvalidType_ReturnsInvalidAndEnabledDefault() {
-		var config = JsonSerializer.Deserialize<JsonElement>("{\"sendcsitems\": \"yes\"}");
+		var config = JsonSerializer.Deserialize<JsonElement>("{\"SendCSItems\": \"yes\"}");
 
 		bool valid = CSBotConfig.TryGetSendCsItems(
 			config.EnumerateObject().ToDictionary(p => p.Name, p => p.Value),
@@ -155,7 +155,7 @@ public sealed class CSInventoryPluginTests {
 
 	[Fact]
 	public void TryGetSendCsItems_NumberType_ReturnsInvalidAndEnabledDefault() {
-		var config = JsonSerializer.Deserialize<JsonElement>("{\"sendcsitems\": 1}");
+		var config = JsonSerializer.Deserialize<JsonElement>("{\"SendCSItems\": 1}");
 
 		bool valid = CSBotConfig.TryGetSendCsItems(
 			config.EnumerateObject().ToDictionary(p => p.Name, p => p.Value),

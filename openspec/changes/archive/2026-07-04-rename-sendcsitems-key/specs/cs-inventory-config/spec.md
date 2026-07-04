@@ -1,7 +1,5 @@
-## Purpose
+## MODIFIED Requirements
 
-Defines the per-bot configuration properties that control CS item forwarding behavior in the plugin.
-## Requirements
 ### Requirement: Per-bot sendcsitems configuration
 Each bot SHALL support a `SendCSItems` boolean property in its ASF JSON configuration to control whether CS item trade notifications are sent from that bot. The canonical property name is `SendCSItems` (PascalCase, matching ASF config conventions). The system SHALL also accept the legacy `sendcsitems` (all-lowercase) key for backward compatibility.
 
@@ -43,4 +41,3 @@ The system SHALL read the `SendCSItems` property via the `IBotModules.OnBotInitM
 - **AND** checks for the canonical `SendCSItems` key first
 - **AND** falls back to the legacy `sendcsitems` key when the canonical key is absent
 - **AND** parses the resolved value as a boolean
-

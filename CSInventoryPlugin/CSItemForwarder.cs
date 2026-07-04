@@ -1,12 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using ArchiSteamFarm.Steam;
 using ArchiSteamFarm.Steam.Data;
 using JetBrains.Annotations;
 
-namespace CSInventory.Plugin;
+namespace CSInventoryPlugin;
 
 [UsedImplicitly]
 internal static class CSItemForwarder {

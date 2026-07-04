@@ -1,5 +1,7 @@
-## ADDED Requirements
+## Purpose
 
+Defines the one-time scan of a bot's CS inventory when it comes online, forwarding any found items to the master account.
+## Requirements
 ### Requirement: Scan bot inventory for CS items on startup
 When a bot finishes initialization and is connected and logged on, the system SHALL scan that bot's CS game inventory (appId 730, contextID 2) for Counter Strike items and forward them to the configured master account.
 
@@ -20,15 +22,15 @@ When a bot finishes initialization and is connected and logged on, the system SH
 - **THEN** the system SHALL NOT perform the startup inventory scan
 
 ### Requirement: Respect sendcsitems config for startup scan
-The startup scan SHALL honor the per-bot `sendcsitems` configuration flag, identical to the trade-results path.
+The startup scan SHALL honor the per-bot `SendCSItems` configuration flag, identical to the trade-results path. The legacy `sendcsitems` key SHALL also be honored for backward compatibility, with the same lookup order and deprecation-warning behavior as the trade-notification path.
 
 #### Scenario: sendcsitems disabled for bot
-- **WHEN** a bot starts with `"sendcsitems": false` in its configuration
+- **WHEN** a bot starts with `"SendCSItems": false` (or the legacy `"sendcsitems": false`) in its configuration
 - **THEN** the system SHALL NOT perform the startup CS item scan for that bot
 - **AND** logs that the startup scan was skipped due to config
 
 #### Scenario: sendcsitems enabled or unset
-- **WHEN** a bot starts with `"sendcsitems": true` or the property absent
+- **WHEN** a bot starts with `"SendCSItems": true` (or the legacy `"sendcsitems": true`) or the property absent
 - **THEN** the system SHALL perform the startup CS item scan for that bot
 
 ### Requirement: Skip startup scan when master is invalid
@@ -56,3 +58,4 @@ The system SHALL log all startup scan attempts and outcomes.
 - **WHEN** the startup scan attempts to send CS items and `Bot.Actions.SendInventory()` fails
 - **THEN** the system logs the failure reason
 - **AND** does not retry automatically
+

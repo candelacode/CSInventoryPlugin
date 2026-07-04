@@ -1,0 +1,13 @@
+## MODIFIED Requirements
+
+### Requirement: Respect sendcsitems config for startup scan
+The startup scan SHALL honor the per-bot `SendCSItems` configuration flag, identical to the trade-results path. The legacy `sendcsitems` key SHALL also be honored for backward compatibility, with the same lookup order and deprecation-warning behavior as the trade-notification path.
+
+#### Scenario: sendcsitems disabled for bot
+- **WHEN** a bot starts with `"SendCSItems": false` (or the legacy `"sendcsitems": false`) in its configuration
+- **THEN** the system SHALL NOT perform the startup CS item scan for that bot
+- **AND** logs that the startup scan was skipped due to config
+
+#### Scenario: sendcsitems enabled or unset
+- **WHEN** a bot starts with `"SendCSItems": true` (or the legacy `"sendcsitems": true`) or the property absent
+- **THEN** the system SHALL perform the startup CS item scan for that bot

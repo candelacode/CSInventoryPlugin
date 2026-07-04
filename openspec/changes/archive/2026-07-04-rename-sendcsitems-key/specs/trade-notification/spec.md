@@ -1,7 +1,5 @@
-## Purpose
+## MODIFIED Requirements
 
-Defines how detected CS items are forwarded to the configured master account via ASF trade offers.
-## Requirements
 ### Requirement: Send trade notification to master account
 When CS items are detected in a bot's inventory by any supported mechanism (trade results processing or bot startup scan), the system SHALL send a trade offer containing those CS items to the configured master account.
 
@@ -38,4 +36,3 @@ The system SHALL log all trade notification attempts and outcomes.
 #### Scenario: Trade skipped due to config
 - **WHEN** CS items are detected but `SendCSItems` is false for the bot
 - **THEN** the system logs that CS item notification was skipped for that bot
-

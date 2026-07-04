@@ -36,9 +36,22 @@
 
 	<!-- Private SNK signing -->
 	<PropertyGroup Condition="'$(Configuration)' == 'Release' AND EXISTS('resources/$(PluginName).snk')">
-		<AssemblyOriginatorKeyFile>../resources/$(PluginName).snk</AssemblyOriginatorKeyFile>
+		<AssemblyOriginatorKeyFile>resources/$(PluginName).snk</AssemblyOriginatorKeyFile>
 		<PublicSign>false</PublicSign>
 		<SignAssembly>true</SignAssembly>
+	</PropertyGroup>
+
+	<!--
+		NU1903: Transitive High-severity vulnerability in Microsoft.OpenApi 2.0.0,
+		pulled in by Microsoft.AspNetCore.OpenAPI. ASF upstream pins
+		Microsoft.AspNetCore.OpenAPI to 10.0.8 in
+		ArchiSteamFarm/Directory.Packages.props (and ASF itself emits the same
+		warning). The proper fix is for ASF to bump the package to a version
+		whose transitive Microsoft.OpenApi is patched; at that point, remove
+		this NoWarn entry.
+	-->
+	<PropertyGroup>
+		<NoWarn>$(NoWarn);NU1903</NoWarn>
 	</PropertyGroup>
 
 </Project>

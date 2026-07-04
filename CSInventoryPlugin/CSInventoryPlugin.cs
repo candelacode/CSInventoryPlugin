@@ -14,7 +14,7 @@ using ArchiSteamFarm.Steam.Exchange;
 using JetBrains.Annotations;
 using SteamKit2;
 
-namespace CSInventory.Plugin;
+namespace CSInventoryPlugin;
 
 [Export(typeof(IPlugin))]
 [UsedImplicitly]
@@ -67,7 +67,7 @@ public sealed class CSInventoryPlugin : IASF, IBot, IBotConnection, IGitHubPlugi
 		}
 
 		if (!IsSendCsItemsEnabled(bot)) {
-			bot.ArchiLogger.LogGenericInfo($"{bot.BotName}: Startup CS item scan skipped (sendcsitems = false).");
+			bot.ArchiLogger.LogGenericInfo($"{bot.BotName}: Startup CS item scan skipped (SendCSItems = false).");
 			return;
 		}
 
@@ -85,7 +85,7 @@ public sealed class CSInventoryPlugin : IASF, IBot, IBotConnection, IGitHubPlugi
 		}
 
 		if (!IsSendCsItemsEnabled(bot)) {
-			bot.ArchiLogger.LogGenericInfo($"{bot.BotName}: CS item notification skipped (sendcsitems = false).");
+			bot.ArchiLogger.LogGenericInfo($"{bot.BotName}: CS item notification skipped (SendCSItems = false).");
 			return;
 		}
 
@@ -109,7 +109,7 @@ public sealed class CSInventoryPlugin : IASF, IBot, IBotConnection, IGitHubPlugi
 		bool valid = CSBotConfig.TryGetSendCsItems(additionalProperties, out bool enabled);
 
 		if (!valid) {
-			bot.ArchiLogger.LogGenericWarning($"{bot.BotName}: Invalid sendcsitems value, expected boolean. Using default (true).");
+			bot.ArchiLogger.LogGenericWarning($"{bot.BotName}: Invalid SendCSItems value, expected boolean. Using default (true).");
 		}
 
 		return enabled;

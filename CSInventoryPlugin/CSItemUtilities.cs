@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using ArchiSteamFarm.Steam.Data;
 
-namespace CSInventory.Plugin;
+namespace CSInventoryPlugin;
 
 internal static class CSItemUtilities {
 	internal const uint CSAppID = 730;

@@ -10,7 +10,7 @@ CSInventory.Plugin is a plugin for [ArchiSteamFarm](https://github.com/JustArchi
 
 - **CS Item Detection**: Automatically detects CS items in bot inventories after trade offers
 - **Trade Notification**: Sends detected CS items to the master account via ASF trade offers
-- **Per-Bot Configuration**: Control CS item forwarding per bot with `sendcsitems` property
+- **Per-Bot Configuration**: Control CS item forwarding per bot with `SendCSItems` property
 - **Zero Configuration**: Works out of the box with sensible defaults
 
 ---
@@ -25,15 +25,16 @@ CSInventory.Plugin is a plugin for [ArchiSteamFarm](https://github.com/JustArchi
 
 ### Configuration
 
-The plugin supports a per-bot `sendcsitems` property in each bot's JSON configuration:
+The plugin supports a per-bot `SendCSItems` property in each bot's JSON configuration:
 
 ```json
 {
-  "sendcsitems": true
+  "SendCSItems": true
 }
 ```
 
-- `sendcsitems` (bool, optional, default: `true`): Set to `false` to disable CS item trade notifications for a specific bot
+- `SendCSItems` (bool, optional, default: `true`): Set to `false` to disable CS item trade notifications for a specific bot
+- `sendcsitems` (deprecated alias): The lowercase `sendcsitems` key is still accepted for backward compatibility, but logs a deprecation warning on startup. Please rename it to `SendCSItems`.
 
 When a bot receives CS items in a trade, the plugin will automatically forward those items to the bot's configured master account via a new trade offer.
 
@@ -91,7 +92,7 @@ The plugin implements the `IBotTradeOfferResults` ASF plugin interface. When a b
 1. The plugin is notified via `OnBotTradeOfferResults()`
 2. It refreshes the bot's inventory cache
 3. It checks for items with `appId == 730` (Counter Strike)
-4. If CS items are found and the bot's `sendcsitems` config is not `false`, it creates a trade offer to the master account containing those items
+4. If CS items are found and the bot's `SendCSItems` config is not `false`, it creates a trade offer to the master account containing those items
 
 ---
 
