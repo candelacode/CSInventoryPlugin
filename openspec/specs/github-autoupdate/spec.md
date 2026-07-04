@@ -17,7 +17,7 @@ The plugin's `Version` property SHALL return the assembly version, which MUST ma
 - **AND** the value matches the `<Version>` in `Directory.Build.props`
 
 ### Requirement: Release artifact is a zip file
-Each GitHub release SHALL include a `.zip` file named `BotManager.Plugin.zip` containing the compiled plugin DLL in the root directory.
+Each GitHub release SHALL include a `.zip` file named `CSInventory.Plugin.zip` containing the compiled plugin DLL in the root directory.
 
 #### Scenario: Zip contains plugin DLL at root
 - **WHEN** a release is created via CI
