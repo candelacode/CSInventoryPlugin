@@ -20,6 +20,6 @@
 
 ## 4. Verify
 
-- [ ] 4.1 Run `dotnet build -c Release` and confirm 0 errors and no `NU1903` warnings.
-- [ ] 4.2 Run `dotnet test` and confirm all remaining tests pass (the legacy-fallback test cases are removed; the simplified test set covers true/false/missing/null/invalid-type/number).
-- [ ] 4.3 Run `openspec validate "pre-release-cleanup" --type change` and confirm the change validates cleanly.
+- [x] 4.1 Run `dotnet build -c Release` and confirm 0 errors and no `NU1903` warnings. (Build succeeds with 0 errors; 0 `NU1903` warnings from `CSInventoryPlugin.csproj` / `CSInventoryPlugin.Tests.csproj`. 2 `NU1903` warnings remain from the `ArchiSteamFarm` submodule — out of scope per design: ASF's own `Directory.Build.props` is auto-imported for the ASF project and does not pick up our root `NoWarn`, and the design explicitly states the fix is upstream.)
+- [x] 4.2 Run `dotnet test` and confirm all remaining tests pass (the legacy-fallback test cases are removed; the simplified test set covers true/false/missing/null/invalid-type/number). (19/19 pass, 0 failed.)
+- [x] 4.3 Run `openspec validate "pre-release-cleanup" --type change` and confirm the change validates cleanly. (`Change 'pre-release-cleanup' is valid`.)
