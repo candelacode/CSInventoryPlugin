@@ -14,7 +14,7 @@ using ArchiSteamFarm.Steam.Exchange;
 using JetBrains.Annotations;
 using SteamKit2;
 
-namespace CSInventoryPlugin;
+namespace CSInventory.Plugin;
 
 [Export(typeof(IPlugin))]
 [UsedImplicitly]

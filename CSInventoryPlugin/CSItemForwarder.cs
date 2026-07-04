@@ -5,7 +5,7 @@ using ArchiSteamFarm.Steam;
 using ArchiSteamFarm.Steam.Data;
 using JetBrains.Annotations;
 
-namespace CSInventoryPlugin;
+namespace CSInventory.Plugin;
 
 [UsedImplicitly]
 internal static class CSItemForwarder {

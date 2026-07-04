@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Text.Json;
 
-namespace CSInventoryPlugin;
+namespace CSInventory.Plugin;
 
 internal static class CSBotConfig {
 	internal static bool TryGetSendCsItems(IReadOnlyDictionary<string, JsonElement>? additionalProperties, out bool enabled) {

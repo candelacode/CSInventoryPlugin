@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using ArchiSteamFarm.Steam.Data;
+using CSInventory.Plugin;
 using CSInventoryPlugin;
 using Xunit;
 
