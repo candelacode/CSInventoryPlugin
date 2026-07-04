@@ -12,15 +12,17 @@ using ArchiSteamFarm.Steam;
 using ArchiSteamFarm.Steam.Data;
 using ArchiSteamFarm.Steam.Exchange;
 using JetBrains.Annotations;
+using SteamKit2;
 
 namespace CSInventory.Plugin;
 
 [Export(typeof(IPlugin))]
 [UsedImplicitly]
-public sealed class CSInventoryPlugin : IASF, IGitHubPluginUpdates, IBotModules, IBotTradeOfferResults {
+public sealed class CSInventoryPlugin : IASF, IBot, IBotConnection, IGitHubPluginUpdates, IBotModules, IBotTradeOfferResults {
 	private const uint CSAppID = 730;
 
 	private static readonly ConcurrentDictionary<string, IReadOnlyDictionary<string, JsonElement>?> BotAdditionalProperties = new();
+	private static readonly ConcurrentDictionary<string, bool> BotStartupScanned = new();
 
 	[JsonInclude]
 	public string Name => nameof(CSInventoryPlugin);
@@ -40,11 +42,56 @@ public sealed class CSInventoryPlugin : IASF, IGitHubPluginUpdates, IBotModules,
 		return Task.CompletedTask;
 	}
 
+	public Task OnBotDestroy(Bot bot) {
+		ArgumentNullException.ThrowIfNull(bot);
+
+		BotAdditionalProperties.TryRemove(bot.BotName, out _);
+		BotStartupScanned.TryRemove(bot.BotName, out _);
+		return Task.CompletedTask;
+	}
+
+	public Task OnBotInit(Bot bot) => Task.CompletedTask;
+
 	public Task OnBotInitModules(Bot bot, IReadOnlyDictionary<string, JsonElement>? additionalConfigProperties = null) {
 		ArgumentNullException.ThrowIfNull(bot);
 
 		BotAdditionalProperties[bot.BotName] = additionalConfigProperties;
 		return Task.CompletedTask;
+	}
+
+	public Task OnBotDisconnected(Bot bot, EResult reason) => Task.CompletedTask;
+
+	public async Task OnBotLoggedOn(Bot bot) {
+		ArgumentNullException.ThrowIfNull(bot);
+
+		if (!bot.IsConnectedAndLoggedOn) {
+			return;
+		}
+
+		if (!GetSendCsItemsConfig(bot)) {
+			bot.ArchiLogger.LogGenericInfo($"{bot.BotName}: Startup CS item scan skipped (sendcsitems = false).");
+			return;
+		}
+
+		if (!BotStartupScanned.TryAdd(bot.BotName, true)) {
+			bot.ArchiLogger.LogGenericInfo($"{bot.BotName}: Startup CS item scan already performed, skipping.");
+			return;
+		}
+
+		bot.ArchiLogger.LogGenericInfo($"{bot.BotName}: Performing startup CS item scan.");
+
+		(HashSet<Asset>? inventory, string inventoryMessage) = await bot.Actions.GetInventory(appID: CSAppID, contextID: Asset.SteamCommunityContextID).ConfigureAwait(false);
+
+		if (inventory == null || inventory.Count == 0) {
+			if (inventory == null) {
+				bot.ArchiLogger.LogGenericWarning($"{bot.BotName}: Startup CS item scan failed to load inventory: {inventoryMessage}");
+			}
+
+			return;
+		}
+
+		bot.ArchiLogger.LogGenericInfo($"{bot.BotName}: Found {inventory.Count} CS item(s) in startup inventory scan.");
+		await ForwardCsItemsToMaster(bot, inventory).ConfigureAwait(false);
 	}
 
 	public async Task OnBotTradeOfferResults(Bot bot, IReadOnlyCollection<ParseTradeResult> tradeResults) {
@@ -57,36 +104,79 @@ public sealed class CSInventoryPlugin : IASF, IGitHubPluginUpdates, IBotModules,
 			return;
 		}
 
-		var receivedItems = tradeResults
-			.Where(result => result.ItemsToReceive?.Count > 0)
-			.SelectMany(result => result.ItemsToReceive!)
-			.Where(item => item.AppID == CSAppID)
-			.ToHashSet();
+		var receivedItems = FilterCsItems(
+			tradeResults
+				.Where(result => result.ItemsToReceive?.Count > 0)
+				.SelectMany(result => result.ItemsToReceive!)
+		);
 
 		if (receivedItems.Count == 0) {
 			return;
 		}
 
 		bot.ArchiLogger.LogGenericInfo($"{bot.BotName}: Found {receivedItems.Count} CS item(s) received in trade.");
+		await ForwardCsItemsToMaster(bot, receivedItems).ConfigureAwait(false);
+	}
+
+	private static async Task ForwardCsItemsToMaster(Bot bot, HashSet<Asset> csItems) {
+		ArgumentNullException.ThrowIfNull(bot);
+		ArgumentNullException.ThrowIfNull(csItems);
+
+		if (csItems.Count == 0) {
+			return;
+		}
 
 		ulong masterSteamID = bot.Actions.GetFirstSteamMasterID();
-		if (masterSteamID == 0) {
-			bot.ArchiLogger.LogGenericWarning($"{bot.BotName}: No master account configured, cannot forward CS items.");
+		if (!ShouldForwardToMaster(masterSteamID, bot.SteamID, out string? skipReason)) {
+			bot.ArchiLogger.LogGenericWarning($"{bot.BotName}: {skipReason}");
 			return;
 		}
 
-		if (masterSteamID == bot.SteamID) {
-			bot.ArchiLogger.LogGenericWarning($"{bot.BotName}: Master account is the bot itself, skipping CS item trade.");
-			return;
-		}
-
-		var result = await bot.Actions.SendInventory(receivedItems, masterSteamID).ConfigureAwait(false);
+		var result = await bot.Actions.SendInventory(csItems, masterSteamID).ConfigureAwait(false);
 
 		if (result.Success) {
 			bot.ArchiLogger.LogGenericInfo($"{bot.BotName}: CS items forwarded to {masterSteamID} successfully.");
 		} else {
 			bot.ArchiLogger.LogGenericWarning($"{bot.BotName}: Failed to forward CS items to {masterSteamID}: {result.Message}");
 		}
+	}
+
+	internal enum ForwardMasterDecision {
+		Forward,
+		NoMaster,
+		MasterIsSelf
+	}
+
+	internal static ForwardMasterDecision EvaluateMasterForForwarding(ulong masterSteamID, ulong botSteamID) {
+		if (masterSteamID == 0) {
+			return ForwardMasterDecision.NoMaster;
+		}
+
+		if (masterSteamID == botSteamID) {
+			return ForwardMasterDecision.MasterIsSelf;
+		}
+
+		return ForwardMasterDecision.Forward;
+	}
+
+	private static bool ShouldForwardToMaster(ulong masterSteamID, ulong botSteamID, out string? skipReason) {
+		switch (EvaluateMasterForForwarding(masterSteamID, botSteamID)) {
+			case ForwardMasterDecision.NoMaster:
+				skipReason = "No master account configured, cannot forward CS items.";
+				return false;
+			case ForwardMasterDecision.MasterIsSelf:
+				skipReason = "Master account is the bot itself, skipping CS item trade.";
+				return false;
+			default:
+				skipReason = null;
+				return true;
+		}
+	}
+
+	internal static HashSet<Asset> FilterCsItems(IEnumerable<Asset> items) {
+		ArgumentNullException.ThrowIfNull(items);
+
+		return items.Where(item => item.AppID == CSAppID).ToHashSet();
 	}
 
 	private static bool GetSendCsItemsConfig(Bot bot) {

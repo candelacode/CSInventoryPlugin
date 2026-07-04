@@ -95,6 +95,96 @@ The plugin implements the `IBotTradeOfferResults` ASF plugin interface. When a b
 
 ---
 
+## Plugin development
+
+This section summarizes how ASF plugins are built. For the full guide, see the [ASF Plugins development wiki](https://github.com/JustArchiNET/ArchiSteamFarm/wiki/Plugins-development).
+
+### Project structure
+
+An ASF plugin is a standard .NET library targeting the same .NET framework as the target ASF version (e.g. `net10.0`). The `.csproj` must reference the main `ArchiSteamFarm` assembly and `System.Composition.AttributedModel` at minimum:
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- ASF already includes these; IncludeAssets="compile" avoids bundling them -->
+    <PackageReference Include="System.Composition.AttributedModel" IncludeAssets="compile" />
+    <PackageReference Include="SteamKit2" IncludeAssets="compile" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Reference ASF source with ExcludeAssets="all" so no ASF files are produced -->
+    <ProjectReference Include="..\ArchiSteamFarm\ArchiSteamFarm\ArchiSteamFarm.csproj" ExcludeAssets="all" Private="false" />
+    <!-- Or reference a prebuilt DLL: -->
+    <!-- <Reference Include="ArchiSteamFarm" HintPath="path\to\ArchiSteamFarm.dll" /> -->
+  </ItemGroup>
+</Project>
+```
+
+### IPlugin interface and export
+
+A plugin class must inherit from `IPlugin` (or a more specialized interface) and be annotated with `[Export(typeof(IPlugin))]` so ASF can discover and load it via `System.Composition`:
+
+```csharp
+using System.Composition;
+using System.Threading.Tasks;
+using ArchiSteamFarm;
+using ArchiSteamFarm.Plugins;
+
+namespace MyPlugin;
+
+[Export(typeof(IPlugin))]
+public sealed class MyPlugin : IPlugin {
+	public string Name => nameof(MyPlugin);
+	public Version Version => typeof(MyPlugin).Assembly.GetName().Version ?? throw new InvalidOperationException(nameof(Version));
+
+	public Task OnLoaded() {
+		ASF.ArchiLogger.LogGenericInfo("Hello World!");
+		return Task.CompletedTask;
+	}
+}
+```
+
+### Common plugin interfaces
+
+ASF exposes several interfaces in `ArchiSteamFarm.Plugins.Interfaces`:
+
+| Interface | Purpose |
+|---|---|
+| `IASF` | ASF initialization (`OnASFInit`) |
+| `IBot` | Bot lifecycle (`OnBotInit`, `OnBotDestroy`) |
+| `IBotModules` | Per-bot config properties (`OnBotInitModules`) |
+| `IBotConnection` | Bot connection events (`OnBotLoggedOn`, `OnBotDisconnected`) |
+| `IBotTradeOfferResults` | Trade offer processing results (`OnBotTradeOfferResults`) |
+| `IBotSteamClient` | Custom SteamKit2 handlers |
+| `IBotCommand2` | Custom commands |
+| `IGitHubPluginUpdates` | GitHub-based automatic plugin updates |
+| `IPluginUpdates` | Custom update mechanism |
+
+See the `ArchiSteamFarm.Plugins.Interfaces` namespace and the [ExamplePlugin](https://github.com/JustArchiNET/ArchiSteamFarm/tree/main/ArchiSteamFarm/Plugins/ExamplePlugin) for full examples.
+
+### Shared dependency handling
+
+Dependencies already included in ASF (e.g. `ArchiSteamFarm`, `SteamKit2`, `AngleSharp`) should be marked with `IncludeAssets="compile"` to avoid bundling them in the plugin output. This reduces memory footprint and plugin size. Only include libraries that ASF does not ship (e.g. `Discord.Net`).
+
+### Native dependencies caveat
+
+ASF OS-specific builds trim the .NET runtime to reduce size. If your plugin uses .NET features not covered by the trimmed runtime, you may encounter `System.MissingMethodException` or `System.Reflection.ReflectionTypeLoadException`. Verify your plugin against the ASF **generic** build first; if it works there but fails on an OS-specific build, it's a native dependency issue. Running custom plugins in the generic ASF flavor is recommended.
+
+### Automatic updates
+
+ASF provides two update interfaces:
+
+- **`IGitHubPluginUpdates`**: GitHub-based updates. Set `RepositoryName`, use version-parsable tags (e.g. `v1.0.0.0`), ensure the plugin's `Version` matches the tag, and attach a `.zip` release asset with the plugin DLL at the root.
+- **`IPluginUpdates`**: Custom update mechanism. Override `GetTargetReleaseURL()` to return the update URL. Supports `OnPluginUpdateProceeding()` and `OnPluginUpdateFinished()` hooks.
+
+Both require appropriate ASF config values (`PluginsUpdateMode`, `PluginsUpdateList`).
+
+---
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.

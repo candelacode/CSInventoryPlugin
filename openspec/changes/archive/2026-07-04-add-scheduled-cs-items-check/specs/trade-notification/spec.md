@@ -1,4 +1,4 @@
-## ADDED Requirements
+## MODIFIED Requirements
 
 ### Requirement: Send trade notification to master account
 When CS items are detected in a bot's inventory by any supported mechanism (trade results processing or bot startup scan), the system SHALL send a trade offer containing those CS items to the configured master account.
@@ -24,15 +24,3 @@ When CS items are detected in a bot's inventory by any supported mechanism (trad
 - **WHEN** `Bot.Actions.SendInventory()` fails for any reason
 - **THEN** the system SHALL log the error
 - **AND** not retry automatically
-
-### Requirement: Log trade notification events
-
-The system SHALL log all trade notification attempts and outcomes.
-
-#### Scenario: Successful trade sent
-- **WHEN** a trade offer is sent successfully
-- **THEN** the system logs the item count, bot name, and target master account
-
-#### Scenario: Trade skipped due to config
-- **WHEN** CS items are detected but `sendcsitems` is false for the bot
-- **THEN** the system logs that CS item notification was skipped for that bot
