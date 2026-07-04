@@ -1,0 +1,14 @@
+<Solution>
+	<Configurations>
+		<BuildType Name="Debug" />
+		<BuildType Name="DebugFast" />
+		<BuildType Name="Release" />
+	</Configurations>
+	<Project Path="ArchiSteamFarm/ArchiSteamFarm/ArchiSteamFarm.csproj" />
+	<Project Path="CSInventoryPlugin.Tests/CSInventoryPlugin.Tests.csproj">
+		<BuildType Solution="DebugFast|*" Project="Debug" />
+	</Project>
+	<Project Path="CSInventoryPlugin/CSInventoryPlugin.csproj">
+		<BuildType Solution="DebugFast|*" Project="Debug" />
+	</Project>
+</Solution>
