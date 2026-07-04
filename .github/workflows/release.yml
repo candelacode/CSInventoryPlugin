@@ -33,6 +33,13 @@ jobs:
     - name: Verify .NET Core
       run: dotnet --info
 
+    - name: Parse plugin name from Directory.Build.props
+      id: plugin-name
+      uses: mavrosxristoforos/get-xml-info@cc0a00b30a53c3adf0ea2cbfd8314cea394fbbad # 2.1.0
+      with:
+        xml-file: 'Directory.Build.props'
+        xpath: '//PluginName'
+
     - name: Extract version from Directory.Build.props
       id: props-version
       uses: mavrosxristoforos/get-xml-info@cc0a00b30a53c3adf0ea2cbfd8314cea394fbbad # 2.1.0
@@ -54,14 +61,14 @@ jobs:
 
     - name: Build plugin
       env:
-        PLUGIN_NAME: CSInventory.Plugin
+        PLUGIN_NAME: ${{ steps.plugin-name.outputs.info }}
       run: |
         set -eu
         dotnet publish "$PLUGIN_NAME" -c "$CONFIGURATION" -o "out/plugin/${PLUGIN_NAME}" -p:ContinuousIntegrationBuild=true -p:TargetLatestRuntimePatch=false -p:UseAppHost=false --nologo
 
     - name: Create release zip
       env:
-        PLUGIN_NAME: CSInventory.Plugin
+        PLUGIN_NAME: ${{ steps.plugin-name.outputs.info }}
       shell: sh
       run: |
         set -eu
@@ -72,11 +79,11 @@ jobs:
       with:
         allowUpdates: true
         artifactErrorsFailBuild: true
-        artifacts: "out/CSInventory.Plugin.zip"
+        artifacts: "out/${{ steps.plugin-name.outputs.info }}.zip"
         bodyFile: .github/RELEASE_TEMPLATE.md
         immutableCreate: true
         makeLatest: false
-        name: CSInventory.Plugin V${{ github.ref_name }}
+        name: ${{ steps.plugin-name.outputs.info }} V${{ github.ref_name }}
         prerelease: false
         token: ${{ secrets.GITHUB_TOKEN }}
         updateOnlyUnreleased: true
