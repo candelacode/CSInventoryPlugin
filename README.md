@@ -72,6 +72,9 @@ The compiled plugin will be in `CSInventoryPlugin/bin/Release/net10.0/CSInventor
 CSInventory.Plugin/
 ├── CSInventoryPlugin/              # Plugin source
 │   ├── CSInventoryPlugin.cs        # Plugin entry point (ASF lifecycle + trade monitoring)
+│   ├── CSBotConfig.cs              # SendCSItems config parser (pure, no Bot dependency)
+│   ├── CSItemUtilities.cs          # CS item filtering and master-account evaluation
+│   ├── CSItemForwarder.cs          # Startup scan and trade-offer forwarding
 │   └── CSInventoryPlugin.csproj
 ├── CSInventoryPlugin.Tests/        # Unit tests
 │   ├── CSInventoryPluginTests.cs
@@ -86,12 +89,21 @@ CSInventory.Plugin/
 
 ## How it works
 
-The plugin implements the `IBotTradeOfferResults` ASF plugin interface. When a bot processes a trade offer:
+The plugin implements two ASF plugin interfaces. On each event it checks the per-bot `SendCSItems` config and, when explicitly set, logs the effective state (`SendCSItems is enabled.` / `SendCSItems is disabled.`). The plugin stays silent when `SendCSItems` is absent.
+
+### Startup scan (`OnBotLoggedOn`)
+
+When a bot becomes connected and logged on, the plugin performs a one-time scan of the bot's CS game inventory (appId 730, contextID 2) and forwards any found items to the master account. This scan runs at most once per bot per ASF session; reconnects are skipped.
+
+### Trade-result forwarding (`OnBotTradeOfferResults`)
+
+When a bot processes a trade offer:
 
 1. The plugin is notified via `OnBotTradeOfferResults()`
-2. It refreshes the bot's inventory cache
-3. It checks for items with `appId == 730` (Counter Strike)
-4. If CS items are found and the bot's `SendCSItems` config is `true`, it creates a trade offer to the master account containing those items
+2. It checks for items with `appId == 730` (Counter Strike) in `ItemsToReceive`
+3. If CS items are found and the bot's `SendCSItems` config is `true`, it creates a trade offer to the master account containing those items
+
+> **Note:** As of the latest release, `SendCSItems` defaults to `false` (opt-in). Users upgrading from a previous version must set `"SendCSItems": true` in each bot's JSON config to keep forwarding enabled. Bots that never had the key set will silently stop forwarding — the absence of a `SendCSItems is enabled.` log line is the signal that forwarding is off.
 
 ---
 
