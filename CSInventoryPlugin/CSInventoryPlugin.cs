@@ -11,6 +11,9 @@ using ArchiSteamFarm.Plugins.Interfaces;
 using ArchiSteamFarm.Steam;
 using ArchiSteamFarm.Steam.Data;
 using ArchiSteamFarm.Steam.Exchange;
+using ArchiSteamFarm.Storage;
+using ArchiSteamFarm.Web.GitHub;
+using ArchiSteamFarm.Web.GitHub.Data;
 using JetBrains.Annotations;
 using SteamKit2;
 
@@ -115,5 +118,108 @@ public sealed class CSInventoryPlugin : IASF, IBot, IBotConnection, IGitHubPlugi
 		}
 
 		return enabled;
+	}
+
+	// Mirrors ArchiSteamFarm/.../IGitHubPluginUpdates.cs:60 and :154. The default interface method in IGitHubPluginUpdates
+	// is sealed and the helper it delegates to is also sealed, so we re-implement IPluginUpdates.GetTargetReleaseURL
+	// on the class to take precedence over the DIM at dispatch time. The only behavioral difference is that
+	// ParseTagAsVersion strips a leading v/V before constructing the System.Version.
+	Task<Uri?> IPluginUpdates.GetTargetReleaseURL(Version asfVersion, string asfVariant, bool asfUpdate, GlobalConfig.EUpdateChannel updateChannel, bool forced) {
+		ArgumentNullException.ThrowIfNull(asfVersion);
+		ArgumentException.ThrowIfNullOrEmpty(asfVariant);
+
+		IGitHubPluginUpdates dim = this;
+
+		if (!dim.CanUpdate) {
+			return Task.FromResult<Uri?>(null);
+		}
+
+		if (string.IsNullOrEmpty(RepositoryName) || (RepositoryName == "JustArchiNET/ASF-PluginTemplate")) {
+			ASF.ArchiLogger.LogGenericError($"Plugin update failed: RepositoryName is not set.");
+
+			return Task.FromResult<Uri?>(null);
+		}
+
+		return GetTargetReleaseURLInternalAsync(asfVersion, asfVariant, asfUpdate, updateChannel == GlobalConfig.EUpdateChannel.Stable, forced);
+	}
+
+	private async Task<Uri?> GetTargetReleaseURLInternalAsync(Version asfVersion, string asfVariant, bool asfUpdate, bool stable, bool forced) {
+		ArgumentNullException.ThrowIfNull(asfVersion);
+		ArgumentException.ThrowIfNullOrEmpty(asfVariant);
+
+		ReleaseResponse? releaseResponse = await GitHubService.GetLatestRelease(RepositoryName, stable).ConfigureAwait(false);
+
+		if (releaseResponse == null) {
+			return null;
+		}
+
+		Version newVersion = ParseTagAsVersion(releaseResponse.Tag);
+
+		if (!forced && (Version >= newVersion)) {
+			// Start from evaluating whether the version is the same and we're actually updating ASF as part of this call
+			// Then calculate assets that can possibly take part in the update process, in order to determine whether the change of plugin variant is possible
+			// The base condition is that the release must have at least 2 total assets, therefore we need to only take into account GetPossibleMatchesByName() logic, while assuming that version is flexible
+			// If by the end we have at least 2 assets we're considering for an update, then that's a possible variant change and in this case we should proceed to cover for the edge case explained above
+			if ((Version > newVersion) || !asfUpdate || (releaseResponse.Assets.Count < 2) || GetPossibleNames().All(pluginName => releaseResponse.Assets.Count(asset => asset.Name.Equals($"{pluginName}.zip", StringComparison.OrdinalIgnoreCase) || (asset.Name.StartsWith($"{pluginName}-V", StringComparison.OrdinalIgnoreCase) && asset.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))) < 2)) {
+				ASF.ArchiLogger.LogGenericInfo($"No plugin update found (current: {Version}, remote: {newVersion}).");
+
+				return null;
+			}
+		}
+
+		if (releaseResponse.Assets.Count == 0) {
+			ASF.ArchiLogger.LogGenericWarning($"Plugin update failed: no usable asset found in release {newVersion}.");
+
+			return null;
+		}
+
+		IGitHubPluginUpdates dim = this;
+		ReleaseAsset? asset = await dim.GetTargetReleaseAsset(asfVersion, asfVariant, newVersion, releaseResponse.Assets).ConfigureAwait(false);
+
+		if ((asset == null) || !releaseResponse.Assets.Contains(asset)) {
+			ASF.ArchiLogger.LogGenericWarning($"Plugin update failed: no usable asset found in release {newVersion}.");
+
+			return null;
+		}
+
+		ASF.ArchiLogger.LogGenericInfo($"Plugin update found (current: {Version}, remote: {newVersion}).");
+
+		return asset.DownloadURL;
+
+		IEnumerable<string> GetPossibleNames() {
+			string pluginName = Name;
+
+			if (!string.IsNullOrEmpty(pluginName)) {
+				yield return pluginName;
+			}
+
+			string? assemblyName = GetType().Assembly.GetName().Name;
+
+			if (!string.IsNullOrEmpty(assemblyName) && !assemblyName.Equals(pluginName, StringComparison.OrdinalIgnoreCase)) {
+				yield return assemblyName;
+			}
+		}
+	}
+
+	internal static Version ParseTagAsVersion(string tag) {
+		if (!string.IsNullOrEmpty(tag) && ((tag[0] == 'v') || (tag[0] == 'V'))) {
+			tag = tag.Substring(1);
+		}
+
+		int dashIndex = tag.IndexOf('-', StringComparison.Ordinal);
+		if (dashIndex >= 0) {
+			tag = tag.Substring(0, dashIndex);
+		}
+
+		string[] parts = tag.Split('.');
+		if (parts.Length < 4) {
+			string[] padded = new string[4];
+			for (int i = 0; i < 4; i++) {
+				padded[i] = i < parts.Length ? parts[i] : "0";
+			}
+			tag = string.Join(".", padded);
+		}
+
+		return new Version(tag);
 	}
 }
